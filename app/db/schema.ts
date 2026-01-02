@@ -8,6 +8,7 @@ import {
   index,
   integer,
   text,
+  boolean,
 } from "drizzle-orm/pg-core";
 
 // Enums
@@ -147,6 +148,27 @@ export const auditLogs = pgTable(
     actionIdx: index("audit_log_action_idx").on(table.action),
     entityIdx: index("audit_log_entity_idx").on(table.entityType, table.entityId),
   })
+);
+
+// Password Reset OTPs Table
+export const passwordResetOtps = pgTable(
+  "password_reset_otps",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => systemUsers.id, { onDelete: "cascade" }),
+    email: varchar("email", { length: 100 }).notNull(),
+    otp: varchar("otp", { length: 6 }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    verified: boolean("verified").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => {
+    return {
+      emailIdx: index("otp_email_idx").on(table.email),
+    };
+  }
 );
 
 // Relations
