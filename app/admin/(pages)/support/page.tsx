@@ -52,7 +52,6 @@ export default function SupportPage() {
             {activeTab === 'knowledge' && <KnowledgeBase />}
             {activeTab === 'training' && <TrainingMaterials />}
           </div> */}
-        </div>
       </div>
     </div>
   )

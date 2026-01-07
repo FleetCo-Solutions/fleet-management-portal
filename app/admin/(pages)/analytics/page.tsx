@@ -52,7 +52,6 @@ export default function AnalyticsPage() {
             {activeTab === 'usage' && <UsageAnalytics />}
             {activeTab === 'business' && <BusinessIntelligence />}
           </div> */}
-        </div>
       </div>
     </div>
   )

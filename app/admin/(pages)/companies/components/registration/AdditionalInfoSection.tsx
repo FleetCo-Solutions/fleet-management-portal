@@ -1,23 +1,7 @@
 'use client'
 import React from 'react'
 import { UseFormRegister, FieldErrors } from 'react-hook-form'
-
-interface CompanyRegistrationData {
-  companyName: string
-  domain: string
-  subscriptionPlan: 'Basic' | 'Standard' | 'Premium'
-  contactPerson: string
-  contactEmail: string
-  contactPhone: string
-  country: string
-  address: string
-  city: string
-  postalCode: string
-  maxUsers: number
-  maxVehicles: number
-  trialPeriod: number
-  notes: string
-}
+import { CompanyRegistrationData } from '../../types'
 
 interface AdditionalInfoSectionProps {
   register: UseFormRegister<CompanyRegistrationData>

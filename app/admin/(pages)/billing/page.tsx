@@ -52,7 +52,6 @@ export default function BillingPage() {
             {activeTab === 'invoices' && <InvoicesList />}
             {activeTab === 'payments' && <PaymentHistory />}
           </div> */}
-        </div>
       </div>
     </div>
   )

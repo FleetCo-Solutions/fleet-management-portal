@@ -5,18 +5,7 @@ import { toast } from 'sonner'
 import CompanyInfoSection from './registration/CompanyInfoSection'
 import ContactInfoSection from './registration/ContactInfoSection'
 import AdditionalInfoSection from './registration/AdditionalInfoSection'
-
-interface CompanyRegistrationData {
-  companyName: string
-  contactPerson: string
-  contactEmail: string
-  contactPhone: string
-  country: string
-  address: string
-  city: string
-  postalCode: string
-  notes: string
-}
+import { CompanyRegistrationData } from '../types'
 
 const CompanyRegistration = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)

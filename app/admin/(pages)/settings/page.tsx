@@ -52,7 +52,6 @@ export default function SettingsPage() {
             {activeTab === 'features' && <FeatureFlags />}
             {activeTab === 'api' && <ApiManagement />}
           </div> */}
-        </div>
       </div>
     </div>
   )
