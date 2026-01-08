@@ -80,46 +80,51 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create new company
-    const [newCompany] = await db
-      .insert(companies)
-      .values({
-        name,
-        status: "trial",
-        contactPerson,
-        contactEmail,
-        contactPhone,
-        country,
-        address: body.address,
-      })
-      .returning();
+    // Use a transaction to ensure both company and user are created together or not at all
+    const result = await db.transaction(async (tx) => {
+      // Create new company
+      const [newCompany] = await tx
+        .insert(companies)
+        .values({
+          name,
+          status: "trial",
+          contactPerson,
+          contactEmail,
+          contactPhone,
+          country,
+          address: body.address,
+        })
+        .returning();
 
-    // Automatically create an admin user for this company
-    const defaultPassword = "Welcome@123"; // Default password
-    
-    // Split contact person name into first and last name
-    const nameParts = contactPerson.trim().split(" ");
-    const firstName = nameParts[0] || contactPerson;
-    const lastName = nameParts.slice(1).join(" ") || contactPerson;
+      // Automatically create an admin user for this company
+      const defaultPassword = "Welcome@123"; // Default password
+      
+      // Split contact person name into first and last name
+      const nameParts = contactPerson.trim().split(" ");
+      const firstName = nameParts[0] || contactPerson;
+      const lastName = nameParts.slice(1).join(" ") || contactPerson;
 
-    await db.insert(users).values({
-      companyId: newCompany.id,
-      firstName,
-      lastName,
-      email: contactEmail,
-      phone: contactPhone,
-      passwordHash: defaultPassword,
-      status: "active",
+      await tx.insert(users).values({
+        companyId: newCompany.id,
+        firstName,
+        lastName,
+        email: contactEmail,
+        phone: contactPhone,
+        passwordHash: defaultPassword,
+        status: "active",
+      });
+
+      return { newCompany, defaultPassword };
     });
 
     return NextResponse.json(
       {
         success: true,
         message: "Company and admin user created successfully",
-        data: newCompany,
+        data: result.newCompany,
         userCredentials: {
           email: contactEmail,
-          password: defaultPassword,
+          password: result.defaultPassword,
         },
       },
       { status: 201 }
@@ -127,12 +132,45 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error creating company:", error);
     
-    // Check for unique constraint violation
-    if (error instanceof Error && error.message.includes("unique")) {
+    // Check for unique constraint violations in the error or its cause
+    const errorMessage = error instanceof Error ? error.message : '';
+    const causeMessage = (error as any)?.cause?.message || '';
+    const constraintName = (error as any)?.cause?.constraint || '';
+    
+    // Check for duplicate phone number
+    if (constraintName === 'users_phone_unique' || 
+        errorMessage.includes("users_phone_unique") || 
+        causeMessage.includes("users_phone_unique") ||
+        (causeMessage.includes("duplicate key") && causeMessage.includes("phone"))) {
       return NextResponse.json(
         {
           success: false,
-          message: "A company with this domain or email already exists",
+          message: "This phone number is already registered in the system",
+        },
+        { status: 409 }
+      );
+    }
+    
+    // Check for duplicate email
+    if (constraintName === 'users_email_unique' ||
+        errorMessage.includes("users_email_unique") || 
+        causeMessage.includes("users_email_unique") ||
+        (causeMessage.includes("duplicate key") && causeMessage.includes("email"))) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "This email address is already registered in the system",
+        },
+        { status: 409 }
+      );
+    }
+    
+    // Check for duplicate company name
+    if (errorMessage.includes("companies") && errorMessage.includes("unique")) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "A company with this name already exists",
         },
         { status: 409 }
       );

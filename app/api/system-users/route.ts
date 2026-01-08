@@ -160,12 +160,31 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error creating system user:', error)
     
-    // Check for unique constraint violation (duplicate email)
-    if (error.code === '23505' && error.constraint === 'admin_system_users_email_unique') {
+    // Check for unique constraint violations in the error or its cause
+    const errorMessage = error instanceof Error ? error.message : '';
+    const causeMessage = (error as any)?.cause?.message || '';
+    const constraintName = (error as any)?.cause?.constraint || error.constraint || '';
+    
+    // Check for duplicate email
+    if (error.code === '23505' || constraintName.includes('email_unique') || 
+        errorMessage.includes('email_unique') || causeMessage.includes('email_unique')) {
       return NextResponse.json(
         { 
           success: false,
           error: 'A user with this email already exists' 
+        },
+        { status: 409 }
+      )
+    }
+    
+    // Check for duplicate phone number
+    if (error.code === '23505' || constraintName.includes('phone_unique') || 
+        errorMessage.includes('phone_unique') || causeMessage.includes('phone_unique') ||
+        (causeMessage.includes("duplicate key") && causeMessage.includes("phone"))) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'This phone number is already registered in the system' 
         },
         { status: 409 }
       )

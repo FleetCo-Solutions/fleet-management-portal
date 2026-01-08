@@ -7,6 +7,8 @@ import CompanyStatusBadge from './CompanyStatusBadge'
 import CompanyContactInfo from './CompanyContactInfo'
 import CompanyExpiryInfo from './CompanyExpiryInfo'
 import EditCompanyModal from './EditCompanyModal'
+import Modal from '@/app/components/Modal'
+import CompanyRegistration from './CompanyRegistration'
 import { ICompany } from '@/actions/companies'
 
 interface CompanyUser {
@@ -25,6 +27,7 @@ const CompaniesList = () => {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null)
   const [showUsersModal, setShowUsersModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
   const [editingCompany, setEditingCompany] = useState<ICompany | null>(null)
   const queryClient = useQueryClient()
 
@@ -185,11 +188,14 @@ const CompaniesList = () => {
             placeholder: 'Filter by status'
           }}
         >
-          <button className="bg-[#004953] text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-[#014852] transition-colors text-sm whitespace-nowrap">
-            Export Data
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="bg-[#004953] text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-[#014852] transition-colors text-sm whitespace-nowrap"
+          >
+            Add Company
           </button>
           <button className="border border-[#004953] text-[#004953] px-3 sm:px-4 py-2 rounded-lg hover:bg-[#004953] hover:text-white transition-colors text-sm whitespace-nowrap">
-            Bulk Actions
+            Export Data
           </button>
         </UniversalTable>
       )}
@@ -297,6 +303,21 @@ const CompaniesList = () => {
           }}
         />
       )}
+
+      {/* Add Company Modal */}
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Add New Company"
+        size="3xl"
+      >
+        <CompanyRegistration 
+          onSuccess={() => {
+            setShowAddModal(false)
+            queryClient.invalidateQueries({ queryKey: ['companies'] })
+          }}
+        />
+      </Modal>
     </div>
   )
 }

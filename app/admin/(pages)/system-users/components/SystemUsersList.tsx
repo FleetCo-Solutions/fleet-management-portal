@@ -1,8 +1,11 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
 import UniversalTable from '@/app/components/universalTable'
 import UserStatusBadge from './UserStatusBadge'
+import Modal from '@/app/components/Modal'
+import CreateSystemUser from './CreateSystemUser'
 import { toast } from 'sonner'
 
 interface SystemUser {
@@ -22,10 +25,8 @@ interface SystemUser {
 }
 
 const SystemUsersList = () => {
-  const [systemUsers, setSystemUsers] = useState<SystemUser[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [editingUser, setEditingUser] = useState<SystemUser | null>(null)
+  const [showAddModal, setShowAddModal] = useState(false)
   const [editFormData, setEditFormData] = useState<{
     firstName: string
     lastName: string
@@ -34,35 +35,29 @@ const SystemUsersList = () => {
     status: 'active' | 'inactive' | 'suspended'
   } | null>(null)
   const [saveLoading, setSaveLoading] = useState(false)
+  const queryClient = useQueryClient()
 
-  // Fetch system users from the admin_system_users table
-  useEffect(() => {
-    const fetchSystemUsers = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch('/api/system-users')
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch system users')
-        }
-
-        const result = await response.json()
-        
-        if (result.success) {
-          setSystemUsers(result.data)
-        } else {
-          throw new Error(result.error || 'Failed to fetch system users')
-        }
-      } catch (err) {
-        console.error('Error fetching system users:', err)
-        setError(err instanceof Error ? err.message : 'An error occurred')
-      } finally {
-        setLoading(false)
+  // Fetch system users using React Query
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['system-users'],
+    queryFn: async () => {
+      const response = await fetch('/api/system-users')
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch system users')
       }
-    }
 
-    fetchSystemUsers()
-  }, [])
+      const result = await response.json()
+      
+      if (result.success) {
+        return result.data as SystemUser[]
+      } else {
+        throw new Error(result.error || 'Failed to fetch system users')
+      }
+    },
+  })
+
+  const systemUsers = data || []
 
   const columns: ColumnDef<SystemUser>[] = [
     {
@@ -139,16 +134,8 @@ const SystemUsersList = () => {
         throw new Error(result.error || 'Failed to update user')
       }
 
-      // Update the user in the list
-      setSystemUsers(users => 
-        users.map(u => 
-          u.id === editingUser.id 
-            ? { ...u, ...editFormData, name: `${editFormData.firstName} ${editFormData.lastName}`, updatedAt: new Date().toISOString() }
-            : u
-        )
-      )
-
       toast.success('User updated successfully!')
+      queryClient.invalidateQueries({ queryKey: ['system-users'] })
       setEditingUser(null)
       setEditFormData(null)
     } catch (err) {
@@ -166,16 +153,9 @@ const SystemUsersList = () => {
       onClick: handleEdit,
       variant: 'secondary' as const,
     },
-    {
-      label: 'Suspend',
-      onClick: (row: SystemUser) => {
-        console.log('Suspend user:', row.id)
-      },
-      variant: 'danger' as const,
-    },
   ]
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -192,7 +172,7 @@ const SystemUsersList = () => {
         <div className="text-center">
           <div className="text-red-500 text-xl mb-2">⚠️</div>
           <p className="text-red-600 font-semibold">Error loading system users</p>
-          <p className="text-gray-600 text-sm mt-1">{error}</p>
+          <p className="text-gray-600 text-sm mt-1">{error.message}</p>
         </div>
       </div>
     )
@@ -208,14 +188,32 @@ const SystemUsersList = () => {
           searchPlaceholder="Search users..."
           actions={actions}
         >
-          <button className="bg-[#004953] text-white px-4 py-2 rounded-lg hover:bg-[#014852] transition-colors">
-            Export Users
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="bg-[#004953] text-white px-4 py-2 rounded-lg hover:bg-[#014852] transition-colors"
+          >
+            Add User
           </button>
           <button className="border border-[#004953] text-[#004953] px-4 py-2 rounded-lg hover:bg-[#004953] hover:text-white transition-colors">
-            Bulk Actions
+            Export Data
           </button>
         </UniversalTable>
       </div>
+
+      {/* Add User Modal */}
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Add New System User"
+        size="2xl"
+      >
+        <CreateSystemUser 
+          onSuccess={() => {
+            setShowAddModal(false)
+            queryClient.invalidateQueries({ queryKey: ['system-users'] })
+          }}
+        />
+      </Modal>
 
       {/* Edit Modal */}
       {editingUser && editFormData && (

@@ -1,14 +1,17 @@
 "use client";
 
 import { signOut } from "next-auth/react";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 interface UserDropdownProps {
+  imageSrc: string;
   userName?: string | null;
   userRole?: string | null;
 }
 
 export default function UserDropdown({
+  imageSrc,
   userName,
   userRole,
 }: UserDropdownProps) {
@@ -32,35 +35,22 @@ export default function UserDropdown({
   }, []);
 
   return (
-    <div className="flex gap-3 items-center relative cursor-pointer" ref={dropdownRef}>
-      <div 
-        className="flex items-center gap-3 pl-4 border-l border-gray-200 hover:bg-gray-50 rounded-lg py-2 px-3 transition-colors"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <div className="w-8 h-8 bg-[#004953] rounded-full flex items-center justify-center">
-          <span className="text-white font-medium text-sm">
-            {userName?.charAt(0).toUpperCase() || 'A'}
-          </span>
-        </div>
-        <div className="text-right">
-          <div className="text-sm font-medium text-gray-900">
-            {userName || 'Admin User'}
-          </div>
-          <div className="text-xs text-gray-500">
-            {userRole || 'Super Admin'}
-          </div>
-        </div>
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          strokeWidth={2} 
-          stroke="currentColor" 
-          className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-        </svg>
+    <div className="flex gap-3 items-center relative cursor-pointer" ref={dropdownRef} onClick={() => setIsOpen(!isOpen)}>
+      <div className="flex flex-col items-end">
+        <span className="text-lg font-medium">{userName}</span>
+        <span className="text-sm text-gray-500">{userRole}</span>
       </div>
+      <button
+        className="w-[50px] h-[50px] rounded-full overflow-hidden border-2 border-transparent hover:border-[#004953] transition-all focus:outline-none"
+      >
+        <Image
+          src={imageSrc}
+          width={50}
+          height={50}
+          alt="User Avatar"
+          className="object-cover w-full h-full"
+        />
+      </button>
 
       {isOpen && (
         <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -71,6 +61,7 @@ export default function UserDropdown({
 
           <button
             onClick={() => {
+              // Add profile navigation logic here if needed
               setIsOpen(false);
             }}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#004953] transition-colors"
@@ -79,6 +70,7 @@ export default function UserDropdown({
           </button>
           <button
             onClick={() => {
+              // Add settings navigation logic here if needed
               setIsOpen(false);
             }}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#004953] transition-colors"

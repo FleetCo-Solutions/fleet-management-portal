@@ -1,14 +1,17 @@
 'use client'
 import React from 'react'
-import { UseFormRegister, FieldErrors } from 'react-hook-form'
+import { UseFormRegister, FieldErrors, Control, Controller } from 'react-hook-form'
 import { CompanyRegistrationData } from '../../types'
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 interface ContactInfoSectionProps {
   register: UseFormRegister<CompanyRegistrationData>
   errors: FieldErrors<CompanyRegistrationData>
+  control: Control<CompanyRegistrationData>
 }
 
-const ContactInfoSection: React.FC<ContactInfoSectionProps> = ({ register, errors }) => {
+const ContactInfoSection: React.FC<ContactInfoSectionProps> = ({ register, errors, control }) => {
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-black border-b pb-2">Contact Information</h3>
@@ -56,12 +59,40 @@ const ContactInfoSection: React.FC<ContactInfoSectionProps> = ({ register, error
           <label htmlFor="contactPhone" className="block text-sm font-medium text-gray-700 mb-1">
             Contact Phone *
           </label>
-          <input
-            {...register('contactPhone', { required: 'Contact phone is required' })}
-            type="tel"
-            id="contactPhone"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-black/70 focus:outline-none focus:ring-0"
-            placeholder="Enter contact phone"
+          <Controller
+            name="contactPhone"
+            control={control}
+            rules={{ 
+              required: 'Contact phone is required',
+              validate: (value) => {
+                if (!value || value.length < 12) {
+                  return 'Please enter a valid phone number'
+                }
+                return true
+              }
+            }}
+            render={({ field: { onChange, value } }) => (
+              <PhoneInput
+                country={'tz'}
+                value={value}
+                onChange={onChange}
+                onlyCountries={['tz']}
+                containerClass="w-full"
+                inputClass="w-full"
+                inputStyle={{
+                  width: '100%',
+                  height: '38px',
+                  fontSize: '14px',
+                  paddingLeft: '48px',
+                  borderColor: errors.contactPhone ? '#ef4444' : '#d1d5db',
+                  borderRadius: '0.375rem',
+                }}
+                buttonStyle={{
+                  borderColor: errors.contactPhone ? '#ef4444' : '#d1d5db',
+                  borderRadius: '0.375rem 0 0 0.375rem',
+                }}
+              />
+            )}
           />
           {errors.contactPhone && (
             <p className="mt-1 text-sm text-red-600">{errors.contactPhone.message}</p>

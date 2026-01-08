@@ -36,11 +36,23 @@ const LoginForm = () => {
       });
 
       if (result?.error) {
+        // Map error codes to user-friendly messages
+        let errorMessage = "Invalid email or password. Please try again.";
+        
+        if (result.error === "CredentialsSignin") {
+          errorMessage = "Invalid email or password. Please check your credentials and try again.";
+        } else if (result.error === "Configuration") {
+          errorMessage = "Authentication system error. Please contact support.";
+        } else if (result.error !== "CredentialsSignin") {
+          // For other errors, show the actual message
+          errorMessage = result.error;
+        }
+        
         setError("root", {
           type: "manual",
-          message: result.error,
+          message: errorMessage,
         });
-        toast.error(result.error);
+        toast.error(errorMessage);
       }
 
       if (result?.ok && !result?.error) {
