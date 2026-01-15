@@ -34,7 +34,7 @@ Admin portal for managing multiple fleet management companies. This application 
    Edit `.env` and configure:
    ```env
    # API Base URL (Required)
-   NEXT_PUBLIC_API_BASE_URL=https://solutions.fleetcotelematics.com
+   API_BASE_URL=https://solutions.fleetcotelematics.com
 
    # Auth Secret (Required for NextAuth session encryption)
    AUTH_SECRET=your-secret-key-here

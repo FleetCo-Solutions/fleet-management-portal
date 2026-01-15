@@ -2,7 +2,7 @@ import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import API_ENDPOINTS from "@/lib/api-endpoints";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://solutions.fleetcotelematics.com';
+const API_BASE_URL = process.env.API_BASE_URL || 'https://solutions.fleetcotelematics.com';
 
 // Simple backend auth error class
 class BackendAuthError extends CredentialsSignin {
