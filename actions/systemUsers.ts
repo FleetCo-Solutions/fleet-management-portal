@@ -119,7 +119,7 @@ export async function updateSystemUser(
         const result = await apiClient.put<{
             success: boolean;
             message: string;
-            data: ISystemUser;
+            systemUser: ISystemUser[];
         }>(API_ENDPOINTS.USERS.UPDATE(id), userData, { token });
 
         return result;
@@ -133,7 +133,7 @@ export async function deleteSystemUser(id: string) {
     try {
         const token = await getAuthToken();
         const result = await apiClient.delete<{
-            success: boolean;
+            timestamp: string;
             message: string;
         }>(API_ENDPOINTS.USERS.DELETE(id), { token });
 

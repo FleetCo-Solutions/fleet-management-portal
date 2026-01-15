@@ -24,8 +24,8 @@ export const API_ENDPOINTS = {
         SYSTEM_USERS: '/api/users/systemUsers',
         BY_COMPANY: '/api/users/usersByCompanyId',
         GET_BY_ID: (id: string) => `/api/users/${id}`,
-        UPDATE: (id: string) => `/api/users/${id}`,
-        DELETE: (id: string) => `/api/users/${id}`,
+        UPDATE: (id: string) => `/api/users/systemUsers/${id}`,
+        DELETE: (id: string) => `/api/users/systemUsers/${id}`,
     },
 } as const;
 

@@ -66,7 +66,7 @@ const getActionButtonStyles = (variant: string = 'primary') => {
     case 'secondary':
       return 'p-1 rounded border border-[#004953] text-[#004953] text-xs font-semibold hover:bg-[#004953] hover:text-white transition-colors'
     case 'danger':
-      return 'p-1 rounded  text-white text-xs font-semibold hover:bg-red-200/80 transition-colors'
+      return 'p-1 rounded text-red-600 hover:bg-red-50 transition-colors'
     default:
       return 'p-1 rounded bg-[#004953] text-white text-xs font-semibold hover:bg-[#014852] transition-colors'
   }
@@ -114,7 +114,7 @@ export default function UniversalTable<T>({
                 }}
                 disabled={action.disabled}
               >
-                {action.icon && <span className="mr-1">{action.icon}</span>}
+                {action.icon && <span>{action.icon}</span>}
                 {action.label}
               </button>
             ))}
@@ -181,7 +181,7 @@ export default function UniversalTable<T>({
             {/* {title && (
               <h2 className="text-xl font-bold text-black">{title}</h2>
             )} */}
-            
+
             {/* Search and Filters */}
             <div className="flex flex-col sm:flex-row gap-4">
               {showSearch && (
@@ -193,7 +193,7 @@ export default function UniversalTable<T>({
                   placeholder={searchPlaceholder}
                 />
               )}
-              
+
               {filters && (
                 <select
                   value={filters.value}
@@ -210,7 +210,7 @@ export default function UniversalTable<T>({
               )}
             </div>
           </div>
-          
+
           {/* Children (buttons) - moved to right side */}
           {children && (
             <div className="flex gap-3">
@@ -239,8 +239,8 @@ export default function UniversalTable<T>({
                       )}
                       {header.column.getCanSort() && (
                         <span className="text-gray-400">
-                          {header.column.getIsSorted() === 'asc' ? '↑' : 
-                           header.column.getIsSorted() === 'desc' ? '↓' : '↕'}
+                          {header.column.getIsSorted() === 'asc' ? '↑' :
+                            header.column.getIsSorted() === 'desc' ? '↓' : '↕'}
                         </span>
                       )}
                     </div>
@@ -252,8 +252,8 @@ export default function UniversalTable<T>({
           <tbody className="divide-y divide-gray-200 bg-white">
             {table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map(row => (
-                <tr 
-                  key={row.id} 
+                <tr
+                  key={row.id}
                   className={`hover:bg-gray-50 ${onRowClick ? 'cursor-pointer' : ''}`}
                   onClick={() => onRowClick?.(row.original as T)}
                 >
@@ -269,8 +269,8 @@ export default function UniversalTable<T>({
               ))
             ) : (
               <tr>
-                <td 
-                  colSpan={tableColumns.length} 
+                <td
+                  colSpan={tableColumns.length}
                   className="px-3 py-8 text-center text-black/60"
                 >
                   {emptyMessage}
@@ -280,7 +280,7 @@ export default function UniversalTable<T>({
           </tbody>
         </table>
       </div>
-      
+
       {/* Pagination */}
       {showPagination && table.getPageCount() > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 text-black">
@@ -326,7 +326,7 @@ export default function UniversalTable<T>({
           <div className="text-sm text-black/60 hidden sm:block">
             Showing {table.getRowModel().rows.length} of {table.getFilteredRowModel().rows.length} results
           </div>
-          
+
           <select
             value={table.getState().pagination.pageSize}
             onChange={e => {

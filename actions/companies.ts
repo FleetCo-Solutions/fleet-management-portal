@@ -98,7 +98,7 @@ export async function updateCompany(id: string, companyData: IUpdateCompany) {
     const result = await apiClient.put<{
       success: boolean;
       message: string;
-      data: ICompany;
+      data: ICompany[];
     }>(API_ENDPOINTS.COMPANIES.UPDATE(id), companyData, { token });
 
     return result;
@@ -112,7 +112,7 @@ export async function deleteCompany(id: string) {
   try {
     const token = await getAuthToken();
     const result = await apiClient.delete<{
-      success: boolean;
+      timestamp: string;
       message: string;
     }>(API_ENDPOINTS.COMPANIES.DELETE(id), { token });
 
