@@ -2,6 +2,15 @@ import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import API_ENDPOINTS from "@/lib/api-endpoints";
 
+/**
+ * Robustly join base URL and endpoint to avoid double slashes or missing slashes
+ */
+function joinUrl(base: string, endpoint: string): string {
+  const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  return `${normalizedBase}${normalizedEndpoint}`;
+}
+
 const API_BASE_URL = process.env.API_BASE_URL || 'https://solutions.fleetcotelematics.com';
 
 // Simple backend auth error class
@@ -18,8 +27,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
       credentials: {
-        email: {},
-        password: {},
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
         if (!credentials?.email || !credentials?.password) {
@@ -27,8 +36,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         try {
+          const loginUrl = joinUrl(API_BASE_URL, API_ENDPOINTS.AUTH.LOGIN);
+
+          // console.log("Attempting login at:", loginUrl);
+
           // Call external login API
-          const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTH.LOGIN}`, {
+          const response = await fetch(loginUrl, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -48,8 +61,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
 
           // Extract user data from API response
-          // Response structure: { success: true, token: "...", user: { ... } }
-          const apiUser = result.user || result.data; // Fallback to data just in case, but user is primary
+          const apiUser = result.user || result.data;
           const token = result.token;
 
           if (!apiUser || !token) {
@@ -57,15 +69,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             throw new BackendAuthError("Invalid response from server");
           }
 
-          // Return user object with token (This matches the User interface in types/next-auth.d.ts)
+          // Return user object with token
           return {
             id: apiUser.id,
             name: `${apiUser.firstName} ${apiUser.lastName}`,
             email: apiUser.email,
             role: apiUser.role,
             department: apiUser.department,
-            accessToken: token, // Store API token
-            // Status is not present in the new API response, so we omit it
+            accessToken: token,
           };
         } catch (error: any) {
           if (error instanceof BackendAuthError) {
@@ -73,7 +84,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
           console.error("Auth error:", error);
           throw new BackendAuthError(
-            error.message || "Authentication failed"
+            "Authentication failed. Please verify your connection."
           );
         }
       },
@@ -81,24 +92,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
 
   callbacks: {
-    // Keep user object on the token for session callback
     jwt: async ({ token, user }) => {
       if (user) {
-        // Attach the user object returned from `authorize` onto the token
         token.id = user.id;
         token.role = user.role;
         token.department = user.department;
-        token.accessToken = user.accessToken;
+        token.accessToken = (user as any).accessToken;
       }
       return token;
     },
     session: async ({ session, token }) => {
-      // Expose the user object on the session for client usage
       if (token && session.user) {
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.department = token.department;
-        session.user.accessToken = token.accessToken;
+        (session.user as any).id = token.id;
+        (session.user as any).role = token.role;
+        (session.user as any).department = token.department;
+        (session.user as any).accessToken = token.accessToken;
       }
       return session;
     },
