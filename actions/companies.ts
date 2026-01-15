@@ -1,9 +1,23 @@
 "use server";
 
+import { apiClient } from "@/lib/api-client";
+import API_ENDPOINTS from "@/lib/api-endpoints";
+import { auth } from "@/app/auth";
+
+// Helper to get auth token
+async function getAuthToken() {
+  const session = await auth();
+  const token = (session?.user as any)?.accessToken;
+  if (!token) {
+    throw new Error("Unauthorized - No auth token available");
+  }
+  return token;
+}
+
 export interface ICompany {
   id: string;
   name: string;
-  domain: string;
+  domain?: string;
   status: "active" | "suspended" | "trial" | "expired";
   contactPerson: string;
   contactEmail: string;
@@ -33,128 +47,77 @@ export interface IUpdateCompany extends Partial<ICreateCompany> {
 // Get all companies
 export async function getCompanies() {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api"}/companies`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      }
+    const token = await getAuthToken();
+    const result = await apiClient.get<{ success: boolean; data: ICompany[]; count?: number }>(
+      API_ENDPOINTS.COMPANIES.GET_ALL,
+      { token }
     );
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || "Failed to fetch companies");
-    }
-
     return result;
-  } catch (err) {
-    throw new Error((err as Error).message);
+  } catch (err: any) {
+    throw new Error(err.message || "Failed to fetch companies");
   }
 }
 
 // Get company by ID
 export async function getCompanyById(id: string) {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api"}/companies/${id}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      }
+    const token = await getAuthToken();
+    const result = await apiClient.get<{ success: boolean; data: ICompany }>(
+      API_ENDPOINTS.COMPANIES.GET_BY_ID(id),
+      { token }
     );
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || "Failed to fetch company");
-    }
-
     return result;
-  } catch (err) {
-    throw new Error((err as Error).message);
+  } catch (err: any) {
+    throw new Error(err.message || "Failed to fetch company");
   }
 }
 
 // Create new company
 export async function createCompany(companyData: ICreateCompany) {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api"}/companies`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(companyData),
-      }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || "Failed to create company");
-    }
+    const token = await getAuthToken();
+    const result = await apiClient.post<{
+      success: boolean;
+      message: string;
+      data: ICompany[];
+      userCredentials?: { email: string; password: string };
+    }>(API_ENDPOINTS.COMPANIES.CREATE, companyData, { token });
 
     return result;
-  } catch (err) {
-    throw new Error((err as Error).message);
+  } catch (err: any) {
+    throw new Error(err.message || "Failed to create company");
   }
 }
 
 // Update company
 export async function updateCompany(id: string, companyData: IUpdateCompany) {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api"}/companies/${id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(companyData),
-      }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || "Failed to update company");
-    }
+    const token = await getAuthToken();
+    const result = await apiClient.put<{
+      success: boolean;
+      message: string;
+      data: ICompany;
+    }>(API_ENDPOINTS.COMPANIES.UPDATE(id), companyData, { token });
 
     return result;
-  } catch (err) {
-    throw new Error((err as Error).message);
+  } catch (err: any) {
+    throw new Error(err.message || "Failed to update company");
   }
 }
 
 // Delete company
 export async function deleteCompany(id: string) {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api"}/companies/${id}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || "Failed to delete company");
-    }
+    const token = await getAuthToken();
+    const result = await apiClient.delete<{
+      success: boolean;
+      message: string;
+    }>(API_ENDPOINTS.COMPANIES.DELETE(id), { token });
 
     return result;
-  } catch (err) {
-    throw new Error((err as Error).message);
+  } catch (err: any) {
+    throw new Error(err.message || "Failed to delete company");
   }
 }

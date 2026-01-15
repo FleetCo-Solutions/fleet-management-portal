@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { toast } from 'sonner'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
+import { createAdminUser } from '@/actions/systemUsers'
 
 interface FormData {
   firstName: string
@@ -41,7 +42,7 @@ const CreateSystemUser: React.FC<CreateSystemUserProps> = ({ onSuccess }) => {
     setFormData(prev => ({ ...prev, phone: value }))
     setPhoneError(null)
     setError(null)
-    
+
     // Validate phone number (should be at least 12 characters including country code)
     if (value && value.length < 12) {
       setPhoneError('Invalid phone number')
@@ -50,38 +51,20 @@ const CreateSystemUser: React.FC<CreateSystemUserProps> = ({ onSuccess }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Validate phone number before submission
     if (!formData.phone || formData.phone.length < 12) {
       setPhoneError('Phone number is required and must be valid')
       return
     }
-    
+
     setLoading(true)
     setError(null)
 
     try {
-      const response = await fetch('/api/system-users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok || !result.success) {
-        // For validation errors (409), don't log to console as they're expected
-        if (response.status === 409) {
-          setError(result.error || 'Validation error')
-          toast.error(result.error || 'Validation error')
-          return
-        }
-        throw new Error(result.error || 'Failed to create user')
-      }
-
+      await createAdminUser(formData)
       toast.success('User created successfully!')
+
       // Reset form
       setFormData({
         firstName: '',
@@ -91,13 +74,12 @@ const CreateSystemUser: React.FC<CreateSystemUserProps> = ({ onSuccess }) => {
         phone: '',
         status: 'active',
       })
-      
+
       // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess()
       }
     } catch (err) {
-      // Only log unexpected errors to console
       console.error('Error creating user:', err)
       const errorMessage = err instanceof Error ? err.message : 'An error occurred'
       setError(errorMessage)

@@ -1,9 +1,8 @@
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { db } from "./db";
-import { systemUsers } from "./db/schema";
-import { eq } from "drizzle-orm";
-import bcrypt from "bcryptjs";
+import API_ENDPOINTS from "@/lib/api-endpoints";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://solutions.fleetcotelematics.com';
 
 // Simple backend auth error class
 class BackendAuthError extends CredentialsSignin {
@@ -27,49 +26,56 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           throw new BackendAuthError("Provide email and password");
         }
 
-        // Fetch user from database
-        const [user] = await db
-          .select()
-          .from(systemUsers)
-          .where(eq(systemUsers.email, credentials.email as string))
-          .limit(1);
+        try {
+          // Call external login API
+          const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTH.LOGIN}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: credentials.email,
+              password: credentials.password,
+            }),
+          });
 
-        if (!user) {
-          throw new BackendAuthError("Invalid credentials");
-        }
+          const result = await response.json();
 
-        // Check if user is active
-        if (user.status !== "active") {
+          if (!response.ok) {
+            throw new BackendAuthError(
+              result.message || result.error || "Invalid credentials"
+            );
+          }
+
+          // Extract user data from API response
+          // Response structure: { success: true, token: "...", user: { ... } }
+          const apiUser = result.user || result.data; // Fallback to data just in case, but user is primary
+          const token = result.token;
+
+          if (!apiUser || !token) {
+            console.error("Login response missing user or token:", result);
+            throw new BackendAuthError("Invalid response from server");
+          }
+
+          // Return user object with token (This matches the User interface in types/next-auth.d.ts)
+          return {
+            id: apiUser.id,
+            name: `${apiUser.firstName} ${apiUser.lastName}`,
+            email: apiUser.email,
+            role: apiUser.role,
+            department: apiUser.department,
+            accessToken: token, // Store API token
+            // Status is not present in the new API response, so we omit it
+          };
+        } catch (error: any) {
+          if (error instanceof BackendAuthError) {
+            throw error;
+          }
+          console.error("Auth error:", error);
           throw new BackendAuthError(
-            `Account is ${user.status}. Please contact administrator.`
+            error.message || "Authentication failed"
           );
         }
-
-        // Verify password
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password as string,
-          user.passwordHash
-        );
-
-        if (!isPasswordValid) {
-          throw new BackendAuthError("Invalid credentials");
-        }
-
-        // Update last login
-        await db
-          .update(systemUsers)
-          .set({ lastLogin: new Date() })
-          .where(eq(systemUsers.id, user.id));
-
-        // Return user object (NextAuth will include this on `user` in callbacks)
-        return {
-          id: user.id,
-          name: `${user.firstName} ${user.lastName}`,
-          email: user.email,
-          role: user.role,
-          status: user.status,
-          department: user.department,
-        };
       },
     }),
   ],
@@ -80,19 +86,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         // Attach the user object returned from `authorize` onto the token
         token.id = user.id;
-        token.role = (user as any).role;
-        token.status = (user as any).status;
-        token.department = (user as any).department;
+        token.role = user.role;
+        token.department = user.department;
+        token.accessToken = user.accessToken;
       }
       return token;
     },
     session: async ({ session, token }) => {
       // Expose the user object on the session for client usage
-      if (token) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
-        (session.user as any).status = token.status;
-        (session.user as any).department = token.department;
+      if (token && session.user) {
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.department = token.department;
+        session.user.accessToken = token.accessToken;
       }
       return session;
     },

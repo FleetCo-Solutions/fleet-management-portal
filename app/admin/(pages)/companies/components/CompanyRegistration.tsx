@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import CompanyInfoSection from './registration/CompanyInfoSection'
 import ContactInfoSection from './registration/ContactInfoSection'
 import { CompanyRegistrationData } from '../types'
+import { createCompany } from '@/actions/companies'
 
 interface CompanyRegistrationProps {
   onSuccess?: () => void
@@ -12,7 +13,7 @@ interface CompanyRegistrationProps {
 
 const CompanyRegistration: React.FC<CompanyRegistrationProps> = ({ onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
+
   const {
     register,
     handleSubmit,
@@ -29,43 +30,28 @@ const CompanyRegistration: React.FC<CompanyRegistrationProps> = ({ onSuccess }) 
   const onSubmit = async (data: CompanyRegistrationData) => {
     setIsSubmitting(true)
     try {
-      const response = await fetch('/api/companies', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: data.companyName,
-          contactPerson: data.contactPerson,
-          contactEmail: data.contactEmail,
-          contactPhone: data.contactPhone,
-          country: data.country,
-          address: data.address,
-          city: data.city,
-          postalCode: data.postalCode,
-        }),
+      const result = await createCompany({
+        name: data.companyName,
+        contactPerson: data.contactPerson,
+        contactEmail: data.contactEmail,
+        contactPhone: data.contactPhone,
+        country: data.country,
+        address: data.address,
       })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        // For validation errors (409), don't throw to avoid console logging
-        if (response.status === 409) {
-          toast.error(result.message || 'Validation error')
-          return
-        }
-        throw new Error(result.message || 'Failed to register company')
-      }
 
       // Show success message with user credentials
       const credentials = result.userCredentials
-      toast.success(
-        `Company registered successfully!\n\nAdmin Login Credentials:\nEmail: ${credentials.email}\nPassword: ${credentials.password}\n\n(Save these credentials!)`,
-        { duration: 10000 }
-      )
-      
+      if (credentials) {
+        toast.success(
+          `Company registered successfully!\n\nAdmin Login Credentials:\nEmail: ${credentials.email}\nPassword: ${credentials.password}\n\n(Save these credentials!)`,
+          { duration: 10000 }
+        )
+      } else {
+        toast.success('Company registered successfully!')
+      }
+
       reset()
-      
+
       // Call onSuccess callback if provided
       if (onSuccess) {
         setTimeout(() => {

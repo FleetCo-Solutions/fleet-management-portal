@@ -1,9 +1,11 @@
 "use server";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://solutions.fleetcotelematics.com';
+
 export async function requestPasswordReset(email: string) {
   try {
     const response = await fetch(
-      `${process.env.LOCAL_BACKENDBASE_URL}/auth/forgetPassword`,
+      `${API_BASE_URL}/api/auth/forgetPassword`,
       {
         method: "POST",
         headers: {
@@ -28,7 +30,7 @@ export async function requestPasswordReset(email: string) {
 export async function verifyOtp(email: string, otp: string) {
   try {
     const response = await fetch(
-      `${process.env.LOCAL_BACKENDBASE_URL}/auth/verifyOtp`,
+      `${API_BASE_URL}/api/auth/verifyOtp`,
       {
         method: "POST",
         headers: {
@@ -53,7 +55,7 @@ export async function verifyOtp(email: string, otp: string) {
 export async function resetPassword(email: string, newPassword: string) {
   try {
     const response = await fetch(
-      `${process.env.LOCAL_BACKENDBASE_URL}/auth/changePassword`,
+      `${API_BASE_URL}/api/auth/changePassword`,
       {
         method: "POST",
         headers: {

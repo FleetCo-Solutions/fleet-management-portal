@@ -4,17 +4,14 @@ Admin portal for managing multiple fleet management companies. This application 
 
 ## Features
 
-- **Company Management**: Create, view, and manage multiple companies
-- **User Management**: Automatically create admin users for new companies
+- **Company Management**: Create, and manage multiple companies
+- **User Management**: Manage system-wide users
 - **Analytics Dashboard**: View system-wide analytics and metrics
-- **Audit Logs**: Track all administrative actions
-- **Multi-tenant Architecture**: Isolated data for each company
+- **Headless Architecture**: Consumes external APIs for all data operations
 
 ## Prerequisites
 
 - Node.js 18+ and pnpm
-- PostgreSQL database (shared with fleetmanagement app)
-- Resend API key (for email notifications)
 
 ## Installation
 
@@ -36,29 +33,11 @@ Admin portal for managing multiple fleet management companies. This application 
    
    Edit `.env` and configure:
    ```env
-   # Database (shared with fleetmanagement app)
-   DATABASE_URL=postgresql://user:password@host:port/database
-   LOCAL_DATABASE_URL=postgresql://user:password@host:port/database
-   
-   # Auth Secret (generate with: openssl rand -base64 32)
+   # API Base URL (Required)
+   NEXT_PUBLIC_API_BASE_URL=https://solutions.fleetcotelematics.com
+
+   # Auth Secret (Required for NextAuth session encryption)
    AUTH_SECRET=your-secret-key-here
-   
-   # Email (optional, for notifications)
-   RESEND_API_KEY=your-resend-api-key
-   ```
-
-4. **Set up the database**
-   ```bash
-   # Generate migration files
-   pnpm drizzle-kit generate
-   
-   # Run migrations
-   pnpm drizzle-kit migrate
-   ```
-
-5. **Create initial admin user** (if needed)
-   ```bash
-   # Use the createTestUser.sql script or create manually in database
    ```
 
 ## Running the Application
@@ -83,61 +62,33 @@ app/
 │   ├── components/    # Admin-specific components
 │   └── layout/        # Admin layout wrapper
 ├── api/               # API routes
-│   ├── auth/          # Authentication endpoints
-│   └── companies/     # Company management APIs
-├── db/                # Database schema and connection
+│   └── auth/          # NextAuth catch-all route (proxy to external API)
 └── auth.ts            # NextAuth configuration
 
-actions/               # Server actions
+actions/               # Server actions (API Proxies)
 ├── companies.ts       # Company CRUD operations
+├── systemUsers.ts     # System User operations
 └── passwordReset.ts   # Password reset logic
+
+lib/
+├── api-client.ts      # Core External API Client
+└── api-endpoints.ts   # API URL Constants
 ```
 
 ## Key Technologies
 
 - **Next.js 15.4.8**: React framework with App Router
-- **Drizzle ORM 0.44.7**: Type-safe database queries
-- **NextAuth**: Authentication with JWT
+- **NextAuth**: Authentication with JWT (Proxied to external API)
 - **TanStack Query**: Data fetching and caching
 - **Tailwind CSS**: Utility-first styling
 - **TypeScript**: Type safety
 
-## Database Schema
+## API Integration
 
-### admin_companies
-Stores company information
+This project is a **Headless Frontend** that communicates exclusively with an external backend:
+- **Base URL**: `https://solutions.fleetcotelematics.com`
+- **Authentication**: JWT-based. Tokens are retrieved via `/api/adminusers/login` and stored in the NextAuth session for subsequent requests.
 
-### admin_system_users
-Super admin users who manage the portal
+## Known Limitations
 
-### admin_audit_logs
-Tracks all administrative actions
-
-### users (shared table)
-Fleet users from the main fleetmanagement app, linked via `company_id`
-
-## Default Credentials
-
-**Note**: Change these immediately in production!
-
-- When creating a new company, an admin user is auto-created with:
-  - Email: company admin email
-  - Password: `Welcome@123`
-
-## Multi-tenant Architecture
-
-- Each company has a unique `company_id` (UUID)
-- All user data in the fleetmanagement database is filtered by `company_id`
-- Companies are isolated and cannot access each other's data
-- Admin portal manages companies; fleet app manages operations
-
-## Related Projects
-
-- **fleetmanagement**: Main fleet operations application (must be running on a different port)
-
-## Development Notes
-
-- Both applications share the same PostgreSQL database
-- The portal manages companies; the fleet app manages vehicles, drivers, trips, etc.
-- Authentication is handled separately in each app but uses the same user table
-- Session includes `companyId` for data isolation
+- **Edit Functionality**: Currently disabled pending API updates for "Edit Company" and "Edit User" endpoints.
