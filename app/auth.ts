@@ -72,7 +72,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           // Return user object with token
           return {
             id: apiUser.id,
-            name: `${apiUser.firstName} ${apiUser.lastName}`,
+            name: apiUser.name || `${apiUser.firstName || ''} ${apiUser.lastName || ''}`.trim() || apiUser.email,
             email: apiUser.email,
             role: apiUser.role,
             department: apiUser.department,
